@@ -262,7 +262,7 @@ function App() {
               label: "Score",
               value: values.score,
               onChange: (next) => update("score", next),
-              placeholder: "From winner's perspective, ex: 6-3 3-6 1-0",
+              placeholder: "Enter the score as shown for the winner, e.g. 6-3 3-6 1-0",
             }),
           ),
         ),

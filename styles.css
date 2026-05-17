@@ -156,6 +156,12 @@ p {
   border-color: var(--clay);
 }
 
+.field input::placeholder {
+  color: #9aa4ad;
+  font-style: italic;
+  opacity: 0.78;
+}
+
 .matchRow {
   display: grid;
   grid-template-columns: minmax(150px, 0.35fr) minmax(0, 0.65fr);
