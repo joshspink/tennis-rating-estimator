@@ -54,9 +54,9 @@ function parseScore(score, result) {
   let winnerGames = 0;
   let loserGames = 0;
   for (const setScore of sets) {
-    const match = setScore.match(/^(\d+)-(\d+)$/);
+    const match = setScore.match(/^(\d+)[-/](\d+)$/);
     if (!match) {
-      throw new Error("Use scores like 6-4 3-6 1-0.");
+      throw new Error("Use scores like 6-4 3-6 1-0. Slashes also work on mobile.");
     }
     winnerGames += Number(match[1]);
     loserGames += Number(match[2]);
@@ -119,7 +119,7 @@ function estimate(values) {
   };
 }
 
-function Field({ label, value, onChange, placeholder, disabled = false }) {
+function Field({ label, value, onChange, placeholder, disabled = false, inputMode = "decimal" }) {
   return h(
     "label",
     { className: disabled ? "field disabled" : "field" },
@@ -129,7 +129,7 @@ function Field({ label, value, onChange, placeholder, disabled = false }) {
       onChange: (event) => onChange(event.target.value),
       placeholder,
       disabled,
-      inputMode: "decimal",
+      inputMode,
     }),
   );
 }
@@ -263,6 +263,7 @@ function App() {
               value: values.score,
               onChange: (next) => update("score", next),
               placeholder: "Enter the score as shown for the winner, e.g. 6-3 3-6 1-0",
+              inputMode: "text",
             }),
           ),
         ),
