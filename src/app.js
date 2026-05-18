@@ -153,6 +153,24 @@ function Segment({ options, value, onChange, label }) {
   );
 }
 
+function LabelWithTooltip({ label, tooltip }) {
+  return h(
+    "div",
+    { className: "labelRow" },
+    h("span", { className: "label" }, label),
+    h(
+      "button",
+      {
+        type: "button",
+        className: "tooltipButton",
+        "aria-label": tooltip,
+      },
+      "i",
+      h("span", { className: "tooltipText", role: "tooltip" }, tooltip),
+    ),
+  );
+}
+
 function App() {
   const [values, setValues] = useState({
     format: "Doubles",
@@ -213,7 +231,10 @@ function App() {
             onChange: (next) => update("format", next),
             label: "Match format",
           })),
-          h("div", { className: "controlBlock" }, h("span", { className: "label" }, "Match Type"), h(Segment, {
+          h("div", { className: "controlBlock" }, h(LabelWithTooltip, {
+            label: "Match Type",
+            tooltip: "Use Adult for Adult, Combo, and Tri-Level estimates. They are modeled roughly the same.",
+          }), h(Segment, {
             options: matchTypeOptions,
             value: values.matchType,
             onChange: (next) => update("matchType", next),

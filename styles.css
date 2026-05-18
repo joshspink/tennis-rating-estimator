@@ -102,6 +102,68 @@ p {
   text-transform: uppercase;
 }
 
+.labelRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+}
+
+.tooltipButton {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0;
+}
+
+.tooltipButton:hover,
+.tooltipButton:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent-dark);
+  outline: none;
+}
+
+.tooltipText {
+  position: absolute;
+  left: 24px;
+  bottom: 50%;
+  z-index: 5;
+  width: min(300px, calc(100vw - 64px));
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 10px 24px rgb(23 32 38 / 14%);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  opacity: 0;
+  padding: 9px 10px;
+  pointer-events: none;
+  text-align: left;
+  text-transform: none;
+  transform: translateY(50%) translateX(-4px);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+
+.tooltipButton:hover .tooltipText,
+.tooltipButton:focus-visible .tooltipText {
+  opacity: 1;
+  transform: translateY(50%) translateX(0);
+}
+
 .segmentGroup {
   display: grid;
   grid-auto-columns: 1fr;
