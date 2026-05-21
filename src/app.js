@@ -5,22 +5,22 @@ const h = React.createElement;
 
 const DOUBLES_CONFIG = {
   Adult: {
-    opponentsWeight: 0.5156,
-    partnerWeight: -0.5002,
-    marginWeight: 0.5616,
-    currentWeight: 0.4795,
-    intercept: -0.0431,
-    neutralCurrent: 3.5093,
-    blend: 0.26,
+    opponentsWeight: 0.505,
+    partnerWeight: -0.5294,
+    marginWeight: 0.5536,
+    currentWeight: 0.5342,
+    intercept: -0.056,
+    neutralCurrent: 3.593,
+    blend: 0.24,
   },
   Mixed: {
-    opponentsWeight: 0.4367,
-    partnerWeight: -0.4409,
-    marginWeight: 0.5556,
-    currentWeight: 0.4959,
-    intercept: 0.2606,
-    neutralCurrent: 3.5996,
-    blend: 0.14,
+    opponentsWeight: 0.4411,
+    partnerWeight: -0.4497,
+    marginWeight: 0.5617,
+    currentWeight: 0.4739,
+    intercept: 0.3366,
+    neutralCurrent: 3.5837,
+    blend: 0.2,
   },
 };
 
