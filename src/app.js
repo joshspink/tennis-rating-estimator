@@ -289,7 +289,10 @@ function App() {
         h(
           "form",
           { className: "panel formPanel" },
-          h("div", { className: "controlBlock" }, h("span", { className: "label" }, "Mode"), h(Segment, {
+          h("div", { className: "controlBlock" }, h(LabelWithTooltip, {
+            label: "Mode",
+            tooltip: "Estimate: calculate ratings from a known score.\nNeeded Score: find scores that meet a target match rating.",
+          }), h(Segment, {
             options: ["Estimate", "Needed Score"],
             value: values.mode,
             onChange: (next) => update("mode", next),
