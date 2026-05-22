@@ -67,14 +67,16 @@ function parseScore(score, result) {
     : { userGames: loserGames, opponentGames: winnerGames };
 }
 
-function estimate(values) {
+function estimate(values, overrides = {}) {
   const errors = [];
   const format = values.format;
   const matchType = values.matchType;
+  const score = overrides.score ?? values.score;
+  const matchResult = overrides.result ?? values.result;
   const currentConfig = format === "Singles" ? SINGLES_CONFIG : DOUBLES_CONFIG[matchType];
   const currentRating =
     parseRating(values.currentRating, "Current rating", errors, false) ?? currentConfig.neutralCurrent;
-  const { userGames, opponentGames } = parseScore(values.score, values.result);
+  const { userGames, opponentGames } = parseScore(score, matchResult);
   const totalGames = userGames + opponentGames;
   const margin = totalGames === 0 ? 0 : (userGames - opponentGames) / totalGames;
 
@@ -115,7 +117,66 @@ function estimate(values) {
     userGames,
     opponentGames,
     blend: currentConfig.blend,
+    score,
+    result: matchResult,
     usedNeutralCurrent: !values.currentRating.trim(),
+  };
+}
+
+function generateScores(resultFilter) {
+  const wonSets = ["6-0", "6-1", "6-2", "6-3", "6-4", "7-5", "7-6"];
+  const lostSets = ["0-6", "1-6", "2-6", "3-6", "4-6", "5-7", "6-7"];
+  const results = resultFilter === "Any" ? ["W", "L"] : [resultFilter];
+  const candidates = [];
+
+  for (const result of results) {
+    for (const first of wonSets) {
+      for (const second of wonSets) {
+        candidates.push({ result, score: `${first} ${second}`, group: "Straight sets" });
+      }
+    }
+    for (const wonSet of wonSets) {
+      for (const lostSet of lostSets) {
+        candidates.push({ result, score: `${wonSet} ${lostSet} 1-0`, group: "Match tiebreak" });
+        candidates.push({ result, score: `${lostSet} ${wonSet} 1-0`, group: "Match tiebreak" });
+      }
+    }
+  }
+
+  return candidates;
+}
+
+function neededScores(values) {
+  const errors = [];
+  const currentRating = parseRating(values.currentRating, "Current rating", errors);
+  const targetRating = parseRating(values.targetRating, "Target match rating", errors, false) ?? currentRating;
+
+  if (errors.length) {
+    return { errors };
+  }
+
+  const candidates = [];
+  for (const candidate of generateScores(values.resultFilter)) {
+    const estimateResult = estimate(values, { score: candidate.score, result: candidate.result });
+    if (!estimateResult.errors.length) {
+      candidates.push({ ...candidate, ...estimateResult });
+    }
+  }
+
+  const qualifying = candidates
+    .filter((candidate) => candidate.matchRating >= targetRating)
+    .sort((a, b) => a.matchRating - b.matchRating);
+  const misses = candidates
+    .filter((candidate) => candidate.matchRating < targetRating)
+    .sort((a, b) => b.matchRating - a.matchRating);
+
+  return {
+    errors: [],
+    currentRating,
+    targetRating,
+    qualifying,
+    misses,
+    needed: qualifying[0] ?? null,
   };
 }
 
@@ -180,12 +241,15 @@ function App() {
     opponentOne: "",
     opponentTwo: "",
     result: "L",
+    resultFilter: "Any",
     score: "",
+    targetRating: "",
+    mode: "Estimate",
   });
 
   const result = useMemo(() => {
     try {
-      return estimate(values);
+      return values.mode === "Needed Score" ? neededScores(values) : estimate(values);
     } catch (error) {
       return { errors: [error.message] };
     }
@@ -225,6 +289,12 @@ function App() {
         h(
           "form",
           { className: "panel formPanel" },
+          h("div", { className: "controlBlock" }, h("span", { className: "label" }, "Mode"), h(Segment, {
+            options: ["Estimate", "Needed Score"],
+            value: values.mode,
+            onChange: (next) => update("mode", next),
+            label: "Calculator mode",
+          })),
           h("div", { className: "controlBlock" }, h("span", { className: "label" }, "Format"), h(Segment, {
             options: formatOptions,
             value: values.format,
@@ -273,19 +343,26 @@ function App() {
           h(
             "div",
             { className: "matchRow" },
-            h("div", { className: "controlBlock compact" }, h("span", { className: "label" }, "Result"), h(Segment, {
-              options: ["W", "L"],
-              value: values.result,
-              onChange: (next) => update("result", next),
-              label: "Result",
+            h("div", { className: "controlBlock compact" }, h("span", { className: "label" }, values.mode === "Needed Score" ? "Result Filter" : "Result"), h(Segment, {
+              options: values.mode === "Needed Score" ? ["Any", "W", "L"] : ["W", "L"],
+              value: values.mode === "Needed Score" ? values.resultFilter : values.result,
+              onChange: (next) => update(values.mode === "Needed Score" ? "resultFilter" : "result", next),
+              label: values.mode === "Needed Score" ? "Result filter" : "Result",
             })),
-            h(Field, {
-              label: "Score",
-              value: values.score,
-              onChange: (next) => update("score", next),
-              placeholder: "Enter the score as shown for the winner, e.g. 6-3 3-6 1-0",
-              inputMode: "text",
-            }),
+            values.mode === "Needed Score"
+              ? h(Field, {
+                  label: "Target match rating",
+                  value: values.targetRating,
+                  onChange: (next) => update("targetRating", next),
+                  placeholder: "Defaults to current rating",
+                })
+              : h(Field, {
+                  label: "Score",
+                  value: values.score,
+                  onChange: (next) => update("score", next),
+                  placeholder: "Enter the score as shown for the winner, e.g. 6-3 3-6 1-0",
+                  inputMode: "text",
+                }),
           ),
         ),
         h(
@@ -294,6 +371,38 @@ function App() {
           h("div", { className: "resultHeader" }, h("span", null, values.format), h("strong", null, values.matchType)),
           result.errors.length
             ? h("div", { className: "errors" }, result.errors.map((error) => h("p", { key: error }, error)))
+            : values.mode === "Needed Score"
+              ? h(
+                  React.Fragment,
+                  null,
+                  h(
+                    "div",
+                    { className: "metric primary" },
+                    h("span", null, "Target match rating"),
+                    h("strong", null, result.targetRating.toFixed(3)),
+                    h("small", null, "Defaults to current rating"),
+                  ),
+                  result.needed
+                    ? h(
+                        React.Fragment,
+                        null,
+                        h(
+                          "div",
+                          { className: "metric" },
+                          h("span", null, "Lowest qualifying score"),
+                          h("strong", null, `${result.needed.result} ${result.needed.score}`),
+                          h("small", null, `Estimated: ${result.needed.matchRating.toFixed(3)}`),
+                        ),
+                        h(ScoreList, { title: "Nearby qualifying scores", scores: result.qualifying.slice(0, 5) }),
+                        h(ScoreList, { title: "Closest misses", scores: result.misses.slice(0, 5) }),
+                      )
+                    : h(
+                        React.Fragment,
+                        null,
+                        h("p", { className: "note" }, "No generated scoreline reaches that target with these inputs."),
+                        h(ScoreList, { title: "Closest misses", scores: result.misses.slice(0, 5) }),
+                      ),
+                )
             : h(
                 React.Fragment,
                 null,
@@ -321,6 +430,29 @@ function App() {
                 result.usedNeutralCurrent &&
                   h("p", { className: "note" }, "No current rating was entered, so a neutral calibration value was used."),
               ),
+        ),
+      ),
+    ),
+  );
+}
+
+function ScoreList({ title, scores }) {
+  if (!scores.length) {
+    return null;
+  }
+  return h(
+    "div",
+    { className: "scoreList" },
+    h("h2", null, title),
+    h(
+      "ol",
+      null,
+      scores.map((score) =>
+        h(
+          "li",
+          { key: `${score.result}-${score.score}-${score.matchRating}` },
+          h("span", null, `${score.result} ${score.score}`),
+          h("strong", null, score.matchRating.toFixed(3)),
         ),
       ),
     ),
