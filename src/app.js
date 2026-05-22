@@ -291,7 +291,7 @@ function App() {
           { className: "panel formPanel" },
           h("div", { className: "controlBlock" }, h(LabelWithTooltip, {
             label: "Mode",
-            tooltip: "Estimate: calculate ratings from a known score.\nNeeded Score: find scores that meet a target match rating.",
+            tooltip: "- Estimate: calculate ratings from a known score\n- Needed Score: find scores that meet a target match rating",
           }), h(Segment, {
             options: ["Estimate", "Needed Score"],
             value: values.mode,
